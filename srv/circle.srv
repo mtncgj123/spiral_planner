@@ -1,0 +1,8 @@
+geometry_msgs/Point start_position
+geometry_msgs/Point goal_position
+float64 yaw_inter
+float64 r
+
+---
+
+geometry_msgs/PoseArray traj

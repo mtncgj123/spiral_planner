@@ -1,0 +1,7 @@
+geometry_msgs/Point start_position
+int32 direction
+float64 distance
+
+---
+
+geometry_msgs/PoseArray traj

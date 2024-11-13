@@ -21,7 +21,7 @@ if __name__ == "__main__":
     client_line.wait_for_service()
 
     x_init, y_init, yaw_init = 22.997613, 2.005575, 0*pi/180
-    x_goal, y_goal, yaw_goal = 26.000000, 3.000000, 0*pi/180
+    x_goal, y_goal, yaw_goal = 26.000000, 3.000000, 90*pi/180
 
     start_position = [x_init, y_init, yaw_init]
     goal_position = [x_goal, y_goal, yaw_goal]

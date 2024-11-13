@@ -46,11 +46,13 @@ class CFG_eval
                     const AD<double>& s);
     void setStartPosition(const sPosition iStartPosition) { this->m_iStartPosition = iStartPosition; };
     void setGoalPosition(const sPosition iGoalPosition) { this->m_iGoalPosition = iGoalPosition; };
+    void setPlanner(const std::string strPlanner) { this->m_strPlanner = strPlanner; };
     void operator()(ADvector& fg, const ADvector& p);
 
   private:
     sPosition m_iStartPosition;
     sPosition m_iGoalPosition;
+    std::string m_strPlanner;
 
     double m_dMin_curv_r = 2.5;
     double m_dMax_curv = 1 / m_dMin_curv_r;
@@ -82,6 +84,7 @@ class CShort_Distance_Planner
     double m_Goal_cost_tolerence;
     double m_dCircle_path_r_max = 5.0;
     double m_dCircle_path_r_min = 3.0;
+    std::string m_strPlanner;
 
     // circle path plan
     int circle_origin_flag(sPosition iStartPosition, sPosition iGoalPosition);

@@ -72,9 +72,6 @@ class Short_Distance_Planner
     vector<double> cumulative_trapezoid(vector<double> x_discrete, vector<double> s_set, double initial);
     tuple<vector<double>, vector<double>, vector<double>, double, bool> spiral_path_finder(Position start_position,
                                                                                            Position goal_position);
-
-    // short path plan
-    // vector<double> short_path_finder(Position start_position, Position goal_position);
 };
 
 #endif

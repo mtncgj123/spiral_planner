@@ -5,7 +5,7 @@
 
     <param name="S_cost_coef" value="2.0" />
     <param name="Goal_cost_tolerence" value="0.1" />
-    <param name="planner" value="soft" type="string" />
+    <param name="planner" value="origin" type="string" />
 
 
   </node>

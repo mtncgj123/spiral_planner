@@ -100,11 +100,20 @@ class CShort_Distance_Planner
                                              const std::vector<double>& vecX_set, const double dInitial);
     void spiral_path_finder(sPosition iStartPosition, sPosition iGoalPosition, std::vector<double>& vecSpiral_path_x,
                             std::vector<double>& vecSpiral_path_y, std::vector<double>& vecSpiral_path_yaw,
-                            double& dMin_curvr, bool& bSFlag, double& dS);
+                            std::vector<double>& vecSpiral_path_curv, double& dMin_curvr, bool& bSFlag, double& dS);
 
     bool spiral_plan_srv_callback(spiral_planner::spiral::Request& request, spiral_planner::spiral::Response& response);
     bool line_plan_srv_callback(spiral_planner::line::Request& request, spiral_planner::line::Response& response);
     bool circle_plan_srv_callback(spiral_planner::circle::Request& request, spiral_planner::circle::Response& response);
+    void printSolStatus(const CppAD::ipopt::solve_result<Dvector>::status_type& enumStatusType);
+    void setSolverOptions(std::string& strOptions);
+    void CalcDiscretePath(const sPosition& iStartPosition, const double dS, const std::vector<AD<double>>& res_a,
+                          std::vector<double>& vecSpiral_path_x, std::vector<double>& vecSpiral_path_y,
+                          std::vector<double>& vecSpiral_path_yaw, std::vector<double>& vecSpiral_path_curv,
+                          double& dMin_curvr);
+    void CalcSolFlag(const sPosition& iStartPosition, const sPosition& iGoalPosition, const double& dS,
+                     const double& dSpiral_path_last_x, const double& dSpiral_path_last_y,
+                     const double& dSpiral_path_last_yaw, bool& bSFlag);
 };
 
 #endif

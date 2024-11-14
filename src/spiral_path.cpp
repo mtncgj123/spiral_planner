@@ -65,29 +65,6 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
 
     double dSoft_constraints_coef = 1000.0;
 
-    // return (pow(x23, 2) / 7 * pow(x24, 7) +
-    //         2 / 6 * x23 * x22 * pow(x24, 6) +
-    //         (pow(x22, 2) + 2 * x23 * x21 + 9 * pow(x23, 2)) / 5 * pow(x24, 5) +
-    //         (2 * x23 * x20 + 2 * x22 * x21 + 12 * x22 * x23) / 4 * pow(x24, 4) +
-    //         (pow(x21, 2) + 2 * x22 * x20 + 4 * pow(x22, 2) + 6 * x21 * x23) / 3 * pow(x24, 3) +
-    //         (2 * x21 * x20 + 4 * x21 * x22) / 2 * pow(x24, 2) +
-    //         (pow(x20, 2) + pow(x21, 2)) * x24)+
-    //         (pow(x13, 2) / 7 * pow(x14, 7) +
-    //         2 / 6 * x13 * x12 * pow(x14, 6) +
-    //         (pow(x12, 2) + 2 * x13 * x11 + 9 * pow(x13, 2)) / 5 * pow(x14, 5) +
-    //         (2 * x13 * x10 + 2 * x12 * x11 + 12 * x12 * x13) / 4 * pow(x14, 4) +
-    //         (pow(x11, 2) + 2 * x12 * x10 + 4 * pow(x12, 2) + 6 * x11 * x13) / 3 * pow(x14, 3) +
-    //         (2 * x11 * x10 + 4 * x11 * x12) / 2 * pow(x14, 2) +
-    //         (pow(x10, 2) + pow(x11, 2)) * x14)+
-    //         0.5 * pow(x14, 2) + 0.5 * pow(x24, 2);
-
-    // return (
-    //         pow(x13, 2) / 7 * pow(x14, 7) + pow(x12, 2) / 5 * pow(x14, 5) + pow(x11, 2) / 3 * pow(x14, 3) + pow(x10,
-    //         2) * x14 + 2 / 6 * x12 * x13 * pow(x14, 6) + 2 / 4 * x11 * x12 * pow(x14, 4) + 2 / 3 * x10 * x12 *
-    //         pow(x14, 3) + 2 / 5 * x13 * x11 * pow(x14, 5) + 2 / 4 * x13 * x10 * pow(x14, 4) + x11 * x10 * pow(x14,
-    //         2)) +
-    //        1 * pow(x14, 2) + 1 * pow(x24, 2);
-
     if ("origin" == m_strPlanner)
     {
         return (pow(a3, 2) / 7.0 * pow(s, 7) + 2 / 6.0 * a3 * a2 * pow(s, 6) +
@@ -112,10 +89,6 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
         MERR("Planner type invalid");
         return s;
     }
-
-    // 100 * pow(position_x(x_init, yaw_init, x0, x1, x2, x3, x4) - x_goal, 2) +
-    // 100 * pow(position_y(y_init, yaw_init, x0, x1, x2, x3, x4) - y_goal, 2) +
-    // 100 * pow(theta(yaw_init, x0, x1, x2, x3, x4) - yaw_goal, 2));
 }
 
 std::vector<AD<double>> CFG_eval::mapping_k2a(const AD<double>& k0, const AD<double>& k1, const AD<double>& k2,
@@ -196,7 +169,6 @@ void CFG_eval::operator()(ADvector& fg, const ADvector& p)
 }
 
 // CShort_Distance_Planner function definition
-
 CShort_Distance_Planner::CShort_Distance_Planner()
 {
     m_servSpiralPlanner =
@@ -214,10 +186,14 @@ CShort_Distance_Planner::CShort_Distance_Planner()
     MINF("Goal_cost_tolerence %6.3f", m_Goal_cost_tolerence);
     MINF("m_strPlanner %s", m_strPlanner.c_str());
 
-    this->m_ptrFG_eval = new CFG_eval();
-    this->m_ptrFG_eval->setPlanner(m_strPlanner);
+    m_ptrFG_eval = new CFG_eval();
+    m_ptrFG_eval->setPlanner(m_strPlanner);
 }
-CShort_Distance_Planner::~CShort_Distance_Planner() { delete m_ptrFG_eval; }
+CShort_Distance_Planner::~CShort_Distance_Planner()
+{
+    delete m_ptrFG_eval;
+    m_ptrFG_eval = nullptr;
+}
 
 // circle path plan
 int CShort_Distance_Planner::circle_origin_flag(sPosition iStartPosition, sPosition iGoalPosition)
@@ -332,49 +308,32 @@ std::vector<double> CShort_Distance_Planner::cumulative_trapezoid(const std::vec
                                                                   const std::vector<double>& vecX_set,
                                                                   const double dInitial)
 {
-    std::vector<double> cumulative_res;
+    std::vector<double> vecCumulative_res;
     double dSum = dInitial;
-    cumulative_res.push_back(dSum);
+    vecCumulative_res.push_back(dSum);
     for (muint i = 0; i < vecX_set.size() - 1; i++)
     {
         dSum +=
             (vecDiscrete_function_value[i] + vecDiscrete_function_value[i + 1]) / 2.0 * (vecX_set[i + 1] - vecX_set[i]);
-        cumulative_res.push_back(dSum);
+        vecCumulative_res.push_back(dSum);
     }
-    return cumulative_res;
+    return vecCumulative_res;
 }
 
 void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosition iGoalPosition,
                                                  std::vector<double>& vecSpiral_path_x,
                                                  std::vector<double>& vecSpiral_path_y,
-                                                 std::vector<double>& vecSpiral_path_yaw, double& dMin_curvr,
+                                                 std::vector<double>& vecSpiral_path_yaw,
+                                                 std::vector<double>& vecSpiral_path_curv, double& dMin_curvr,
                                                  bool& bSFlag, double& dS)
 {
-    vecSpiral_path_x.clear();
-    vecSpiral_path_y.clear();
-    vecSpiral_path_yaw.clear();
-
     size_t i;
     muint uSIndex;
-
-    // options
-    std::string options;
-    // turn off any printing
-    options += "Integer print_level  0\n";
-    options += "String sb            yes\n";
-    // maximum iterations
-    options += "Integer max_iter     100\n";
-    // approximate accuracy in first order necessary conditions;
-    //  see Mathematical Programming, Volume 106, Number 1,
-    //  Pages 25-57, Equation (6)
-    options += "Numeric tol          1e-6\n";
-    // derivative tesing
-    options += "String derivative_test   second-order\n";
-    // maximum amount of random pertubation; e.g.,
-    // when evaluation finite diff
-    options += "Numeric point_perturbation_radius   0.\n";
-
+    std::string strOptions;
     CppAD::ipopt::solve_result<Dvector> solution;  // solution
+
+    // set solver options
+    setSolverOptions(strOptions);
 
     if ("origin" == m_strPlanner)
     {
@@ -414,7 +373,7 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
         gu[7] = 0;
 
         // solve the problem
-        CppAD::ipopt::solve<Dvector, CFG_eval>(options, v, xl, xu, gl, gu, *m_ptrFG_eval, solution);
+        CppAD::ipopt::solve<Dvector, CFG_eval>(strOptions, v, xl, xu, gl, gu, *m_ptrFG_eval, solution);
         uSIndex = 4;
     }
     else if ("soft" == m_strPlanner)
@@ -449,78 +408,24 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
         gu[4] = 20.0;
 
         // solve the problem
-        CppAD::ipopt::solve<Dvector, CFG_eval>(options, v, xl, xu, gl, gu, *m_ptrFG_eval, solution);
+        CppAD::ipopt::solve<Dvector, CFG_eval>(strOptions, v, xl, xu, gl, gu, *m_ptrFG_eval, solution);
         uSIndex = 4;
     }
 
-    std::vector<AD<double>> res_x1 =
+    std::vector<AD<double>> res_a =
         m_ptrFG_eval->mapping_k2a((solution.x)[0], (solution.x)[1], (solution.x)[2], (solution.x)[3], (solution.x)[4]);
     MINF("obj_value:%6.3f", solution.obj_value);
-    MINF("possible solution status:%d", (int)solution.status);
-    dS = CppAD::Value(res_x1[uSIndex]);
+    printSolStatus(solution.status);
 
-    double dStep = 0.01;
-    std::vector<double> x_discrete, y_discrete, spiral_path_curv, s_set;
-    if (dS > 0)
-    {
-        for (double i = 0; i < dS + dStep; i += dStep)
-        {
-            double theta_yaw =
-                CppAD::Value(m_ptrFG_eval->theta(iStartPosition.m_dYaw, res_x1[0], res_x1[1], res_x1[2], res_x1[3], i));
-            x_discrete.push_back(cos(theta_yaw));
-            y_discrete.push_back(sin(theta_yaw));
-            vecSpiral_path_yaw.push_back(theta_yaw);
-            s_set.push_back(i);
-            spiral_path_curv.push_back(
-                fabs(CppAD::Value(m_ptrFG_eval->curv(res_x1[0], res_x1[1], res_x1[2], res_x1[3], i))));
-        }
-    }
-    else
-    {
-        for (double i = 0; i > dS - dStep; i -= dStep)
-        {
-            double theta_yaw =
-                CppAD::Value(m_ptrFG_eval->theta(iStartPosition.m_dYaw, res_x1[0], res_x1[1], res_x1[2], res_x1[3], i));
-            x_discrete.push_back(cos(theta_yaw));
-            y_discrete.push_back(sin(theta_yaw));
-            vecSpiral_path_yaw.push_back(theta_yaw);
-            s_set.push_back(i);
-            spiral_path_curv.push_back(
-                fabs(CppAD::Value(m_ptrFG_eval->curv(res_x1[0], res_x1[1], res_x1[2], res_x1[3], i))));
-        }
-    }
-    vecSpiral_path_x = cumulative_trapezoid(x_discrete, s_set, iStartPosition.m_dX);
-    vecSpiral_path_y = cumulative_trapezoid(y_discrete, s_set, iStartPosition.m_dY);
-    dMin_curvr = 1.0 / (std::max(0.01, *max_element(spiral_path_curv.begin(), spiral_path_curv.end())));
+    dS = CppAD::Value(res_a[uSIndex]);
+    CalcDiscretePath(iStartPosition, dS, res_a, vecSpiral_path_x, vecSpiral_path_y, vecSpiral_path_yaw,
+                     vecSpiral_path_curv, dMin_curvr);
 
-    double dEuclideanDist =
-        sqrt(pow(iStartPosition.m_dX - iGoalPosition.m_dX, 2) + pow(iStartPosition.m_dY - iGoalPosition.m_dY, 2));
-    bool bSCost = dS < m_dS_cost_coef * dEuclideanDist;
-
-    double dGoalError = sqrt(pow(vecSpiral_path_x.back() - iGoalPosition.m_dX, 2) +
-                             pow(vecSpiral_path_y.back() - iGoalPosition.m_dY, 2) +
-                             pow(vecSpiral_path_yaw.back() - iGoalPosition.m_dYaw, 2));
-    bool bGoalCost = (dGoalError < m_Goal_cost_tolerence);
-
-    if (false == bSCost)
-    {
-        MINF("S_cost false s:%6.3f,Euclidean dist cost:%6.3f", dS, m_dS_cost_coef * dEuclideanDist);
-    }
-    if (false == bGoalCost)
-    {
-        MINF("X_Error,Y_Error,Yaw_Error: (%6.3f, %6.3f, %6.3f)", fabs(vecSpiral_path_x.back() - iGoalPosition.m_dX),
-             fabs(vecSpiral_path_y.back() - iGoalPosition.m_dY),
-             fabs(vecSpiral_path_yaw.back() - iGoalPosition.m_dYaw));
-    }
-
-    if (bSCost == true && bGoalCost == true)
-    {
-        bSFlag = true;
-    }
-    else
-    {
-        bSFlag = false;
-    }
+    double dSpiral_path_last_x = vecSpiral_path_x.back();
+    double dSpiral_path_last_y = vecSpiral_path_y.back();
+    double dSpiral_path_last_yaw = vecSpiral_path_yaw.back();
+    CalcSolFlag(iStartPosition, iGoalPosition, dS, dSpiral_path_last_x, dSpiral_path_last_y, dSpiral_path_last_yaw,
+                bSFlag);
 }
 
 //********* callback function **************//
@@ -536,15 +441,15 @@ bool CShort_Distance_Planner::spiral_plan_srv_callback(spiral_planner::spiral::R
     sPosition iGoalPosition(p2.x, p2.y, p2.z);
     MINF("Start position:(%6.3f,%6.3f,%6.3f)", iStartPosition.m_dX, iStartPosition.m_dY, iStartPosition.m_dYaw);
     MINF("Goal position:(%6.3f,%6.3f,%6.3f)", iGoalPosition.m_dX, iGoalPosition.m_dY, iGoalPosition.m_dYaw);
-    this->m_ptrFG_eval->setStartPosition(iStartPosition);
-    this->m_ptrFG_eval->setGoalPosition(iGoalPosition);
-    std::vector<double> vecSpiral_path_x, vecSpiral_path_y, vecSpiral_path_yaw;
+    m_ptrFG_eval->setStartPosition(iStartPosition);
+    m_ptrFG_eval->setGoalPosition(iGoalPosition);
+    std::vector<double> vecSpiral_path_x, vecSpiral_path_y, vecSpiral_path_yaw, vecSpiral_path_curv;
     double dMin_curvr, dS;
     bool bSFlag;
 
     ros::Time Current = ros::Time::now();
     spiral_path_finder(iStartPosition, iGoalPosition, vecSpiral_path_x, vecSpiral_path_y, vecSpiral_path_yaw,
-                       dMin_curvr, bSFlag, dS);
+                       vecSpiral_path_curv, dMin_curvr, bSFlag, dS);
     MINF("Spiral path planning time: %6.3f ms", 1000 * (ros::Time::now() - Current).toSec());
     MINF("Min_curvr:%6.3f", dMin_curvr);
     MINF("Total distance:%6.3f", dS);
@@ -555,7 +460,8 @@ bool CShort_Distance_Planner::spiral_plan_srv_callback(spiral_planner::spiral::R
         geometry_msgs::Pose pose;
         pose.position.x = vecSpiral_path_x[i];
         pose.position.y = vecSpiral_path_y[i];
-        pose.position.z = vecSpiral_path_yaw[i];
+        pose.orientation.z = vecSpiral_path_yaw[i];
+        pose.orientation.w = vecSpiral_path_curv[i];
         traj.poses.push_back(pose);
     }
     response.traj = traj;
@@ -616,6 +522,193 @@ bool CShort_Distance_Planner::line_plan_srv_callback(spiral_planner::line::Reque
     response.traj = traj;
 
     return true;
+}
+
+void CShort_Distance_Planner::printSolStatus(const CppAD::ipopt::solve_result<Dvector>::status_type& enumStatusType)
+{
+    switch (enumStatusType)
+    {
+        case CppAD::ipopt::solve_result<Dvector>::status_type::not_defined:
+        {
+            MWARN("Solution status: not defined");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::success:
+        {
+            MWARN("Solution status: success");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::maxiter_exceeded:
+        {
+            MWARN("Solution status: maxiter_exceeded");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::stop_at_tiny_step:
+        {
+            MWARN("Solution status: stop_at_tiny_step");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::stop_at_acceptable_point:
+        {
+            MWARN("Solution status: stop_at_acceptable_point");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::local_infeasibility:
+        {
+            MWARN("Solution status: local_infeasibility");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::user_requested_stop:
+        {
+            MWARN("Solution status: user_requested_stop");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::feasible_point_found:
+        {
+            MWARN("Solution status: feasible_point_found");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::diverging_iterates:
+        {
+            MWARN("Solution status: diverging_iterates");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::restoration_failure:
+        {
+            MWARN("Solution status: restoration_failure");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::error_in_step_computation:
+        {
+            MWARN("Solution status: error_in_step_computation");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::invalid_number_detected:
+        {
+            MWARN("Solution status: invalid_number_detected");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::too_few_degrees_of_freedom:
+        {
+            MWARN("Solution status: too_few_degrees_of_freedom");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::internal_error:
+        {
+            MWARN("Solution status: internal_error");
+            break;
+        }
+        case CppAD::ipopt::solve_result<Dvector>::status_type::unknown:
+        {
+            MWARN("Solution status: unknown");
+            break;
+        }
+        default:
+        {
+            MERR("Unknown status type.");
+            break;
+        }
+    }
+}
+
+void CShort_Distance_Planner::setSolverOptions(std::string& strOptions)
+{
+    // turn off any printing
+    strOptions += "Integer print_level  0\n";
+    strOptions += "String sb            yes\n";
+    // maximum iterations
+    strOptions += "Integer max_iter     100\n";
+    // approximate accuracy in first order necessary conditions;
+    //  see Mathematical Programming, Volume 106, Number 1,
+    //  Pages 25-57, Equation (6)
+    strOptions += "Numeric tol          1e-6\n";
+    // derivative tesing
+    strOptions += "String derivative_test   second-order\n";
+    // maximum amount of random pertubation; e.g.,
+    // when evaluation finite diff
+    strOptions += "Numeric point_perturbation_radius   0.\n";
+}
+
+void CShort_Distance_Planner::CalcDiscretePath(const sPosition& iStartPosition, const double dS,
+                                               const std::vector<AD<double>>& res_a,
+                                               std::vector<double>& vecSpiral_path_x,
+                                               std::vector<double>& vecSpiral_path_y,
+                                               std::vector<double>& vecSpiral_path_yaw,
+                                               std::vector<double>& vecSpiral_path_curv, double& dMin_curvr)
+{
+    vecSpiral_path_x.clear();
+    vecSpiral_path_y.clear();
+    vecSpiral_path_yaw.clear();
+    vecSpiral_path_curv.clear();
+    double dStep = 0.01, dMaxCurv = 0.0;
+    std::vector<double> vecDiscrete_x, vecDiscrete_y, vecDiscrete_s;
+    if (dS > 0)
+    {
+        for (double i = 0; i < dS + dStep; i += dStep)
+        {
+            double theta_yaw =
+                CppAD::Value(m_ptrFG_eval->theta(iStartPosition.m_dYaw, res_a[0], res_a[1], res_a[2], res_a[3], i));
+            vecDiscrete_x.push_back(cos(theta_yaw));
+            vecDiscrete_y.push_back(sin(theta_yaw));
+            vecSpiral_path_yaw.push_back(theta_yaw);
+            vecDiscrete_s.push_back(i);
+            double dCurrenturv = CppAD::Value(m_ptrFG_eval->curv(res_a[0], res_a[1], res_a[2], res_a[3], i));
+            vecSpiral_path_curv.push_back(dCurrenturv);
+            dMaxCurv = dMaxCurv > fabs(dCurrenturv) ? dMaxCurv : fabs(dCurrenturv);
+        }
+    }
+    else
+    {
+        for (double i = 0; i > dS - dStep; i -= dStep)
+        {
+            double theta_yaw =
+                CppAD::Value(m_ptrFG_eval->theta(iStartPosition.m_dYaw, res_a[0], res_a[1], res_a[2], res_a[3], i));
+            vecDiscrete_x.push_back(cos(theta_yaw));
+            vecDiscrete_y.push_back(sin(theta_yaw));
+            vecSpiral_path_yaw.push_back(theta_yaw);
+            vecDiscrete_s.push_back(i);
+            double dCurrenturv = CppAD::Value(m_ptrFG_eval->curv(res_a[0], res_a[1], res_a[2], res_a[3], i));
+            vecSpiral_path_curv.push_back(dCurrenturv);
+            dMaxCurv = dMaxCurv > fabs(dCurrenturv) ? dMaxCurv : fabs(dCurrenturv);
+        }
+    }
+    vecSpiral_path_x = cumulative_trapezoid(vecDiscrete_x, vecDiscrete_s, iStartPosition.m_dX);
+    vecSpiral_path_y = cumulative_trapezoid(vecDiscrete_y, vecDiscrete_s, iStartPosition.m_dY);
+    dMin_curvr = 1.0 / (std::max(0.01, *max_element(vecSpiral_path_curv.begin(), vecSpiral_path_curv.end())));
+}
+
+void CShort_Distance_Planner::CalcSolFlag(const sPosition& iStartPosition, const sPosition& iGoalPosition,
+                                          const double& dS, const double& dSpiral_path_last_x,
+                                          const double& dSpiral_path_last_y, const double& dSpiral_path_last_yaw,
+                                          bool& bSFlag)
+{
+    double dEuclideanDist =
+        sqrt(pow(iStartPosition.m_dX - iGoalPosition.m_dX, 2) + pow(iStartPosition.m_dY - iGoalPosition.m_dY, 2));
+    bool bSCost = dS < m_dS_cost_coef * dEuclideanDist;
+
+    double dGoalError =
+        sqrt(pow(dSpiral_path_last_x - iGoalPosition.m_dX, 2) + pow(dSpiral_path_last_y - iGoalPosition.m_dY, 2) +
+             pow(dSpiral_path_last_yaw - iGoalPosition.m_dYaw, 2));
+    bool bGoalCost = (dGoalError < m_Goal_cost_tolerence);
+
+    if (false == bSCost)
+    {
+        MERR("S_cost false s:%6.3f,Euclidean dist cost:%6.3f", dS, m_dS_cost_coef * dEuclideanDist);
+    }
+    if (false == bGoalCost)
+    {
+        MERR("X_Error,Y_Error,Yaw_Error: (%6.3f, %6.3f, %6.3f)", fabs(dSpiral_path_last_x - iGoalPosition.m_dX),
+             fabs(dSpiral_path_last_y - iGoalPosition.m_dY), fabs(dSpiral_path_last_yaw - iGoalPosition.m_dYaw));
+    }
+
+    if (bSCost == true && bGoalCost == true)
+    {
+        bSFlag = true;
+    }
+    else
+    {
+        bSFlag = false;
+    }
 }
 
 int main(int argc, char** argv)

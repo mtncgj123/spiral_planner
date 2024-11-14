@@ -84,6 +84,14 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
                dSoft_constraints_coef * pow(position_y(dY_init, dYaw_init, a0, a1, a2, a3, s) - dY_goal, 2) +
                dSoft_constraints_coef * pow(theta(dYaw_init, a0, a1, a2, a3, s) - dYaw_goal, 2);
     }
+    else if ("dual_path" == m_strPlanner)
+    {
+        return (pow(a3, 2) / 7.0 * pow(s, 7) + 2 / 6.0 * a3 * a2 * pow(s, 6) +
+                (pow(a2, 2) + 2 * a3 * a1 + 9 * pow(a3, 2)) / 5.0 * pow(s, 5) +
+                (2 * a3 * a0 + 2 * a2 * a1 + 12 * a2 * a3) / 4.0 * pow(s, 4) +
+                (pow(a1, 2) + 2 * a2 * a0 + 4 * pow(a2, 2) + 6 * a1 * a3) / 3.0 * pow(s, 3) +
+                (2 * a1 * a0 + 4 * a1 * a2) / 2.0 * pow(s, 2) + (pow(a0, 2) + pow(a1, 2)) * s);
+    }
     else
     {
         MERR("Planner type invalid");
@@ -110,8 +118,8 @@ void CFG_eval::operator()(ADvector& fg, const ADvector& p)
 {
     if ("origin" == m_strPlanner)
     {
-        assert(fg.size() == 9);
         assert(p.size() == 5);
+        assert(fg.size() == 9);
         // variables
         AD<double> k0 = p[0];
         AD<double> k1 = p[1];
@@ -144,8 +152,8 @@ void CFG_eval::operator()(ADvector& fg, const ADvector& p)
     }
     else if ("soft" == m_strPlanner)
     {
-        assert(fg.size() == 6);
         assert(p.size() == 5);
+        assert(fg.size() == 6);
         // variables
         AD<double> k0 = p[0];
         AD<double> k1 = p[1];
@@ -163,6 +171,77 @@ void CFG_eval::operator()(ADvector& fg, const ADvector& p)
         fg[3] = pow(m_dMax_curv, 2) - pow(k2, 2);
         fg[4] = pow(m_dMax_curv, 2) - pow(k3, 2);
         fg[5] = s;
+
+        return;
+    }
+    else if ("dual_path" == m_strPlanner)
+    {
+        assert(p.size() == 13);
+        assert(fg.size() == 21);
+        // variables
+        AD<double> k_front0 = p[0];
+        AD<double> k_front1 = p[1];
+        AD<double> k_front2 = p[2];
+        AD<double> k_front3 = p[3];
+        AD<double> s_front = p[4];
+
+        AD<double> k_back0 = p[5];
+        AD<double> k_back1 = p[6];
+        AD<double> k_back2 = p[7];
+        AD<double> k_back3 = p[8];
+        AD<double> s_back = p[9];
+
+        AD<double> middle_x = p[10];
+        AD<double> middle_y = p[11];
+        AD<double> middle_yaw = p[12];
+
+        // f(x) objective function
+        std::vector<AD<double>> polyparam_set_front = mapping_k2a(k_front0, k_front1, k_front2, k_front3, s_front);
+        std::vector<AD<double>> polyparam_set_back = mapping_k2a(k_back0, k_back1, k_back2, k_back3, s_back);
+        fg[0] = cost(polyparam_set_front[0], polyparam_set_front[1], polyparam_set_front[2], polyparam_set_front[3],
+                     polyparam_set_front[4]) +
+                cost(polyparam_set_back[0], polyparam_set_back[1], polyparam_set_back[2], polyparam_set_back[3],
+                     polyparam_set_back[4]);
+
+        // constraints
+        fg[1] = k_front0;
+        fg[2] = pow(m_dMax_curv, 2) - pow(k_front1, 2);
+        fg[3] = pow(m_dMax_curv, 2) - pow(k_front2, 2);
+        fg[4] = pow(m_dMax_curv, 2) - pow(k_front3, 2);
+        fg[5] = s_front;
+
+        fg[6] =
+            position_x(m_iStartPosition.m_dX, m_iStartPosition.m_dYaw, polyparam_set_front[0], polyparam_set_front[1],
+                       polyparam_set_front[2], polyparam_set_front[3], polyparam_set_front[4]) -
+            middle_x;
+        fg[7] =
+            position_y(m_iStartPosition.m_dY, m_iStartPosition.m_dYaw, polyparam_set_front[0], polyparam_set_front[1],
+                       polyparam_set_front[2], polyparam_set_front[3], polyparam_set_front[4]) -
+            middle_y;
+        fg[8] = theta(m_iStartPosition.m_dYaw, polyparam_set_front[0], polyparam_set_front[1], polyparam_set_front[2],
+                      polyparam_set_front[3], polyparam_set_front[4]) -
+                middle_yaw;
+
+        fg[9] = k_back0;
+        fg[10] = pow(m_dMax_curv, 2) - pow(k_back1, 2);
+        fg[11] = pow(m_dMax_curv, 2) - pow(k_back2, 2);
+        fg[12] = pow(m_dMax_curv, 2) - pow(k_back3, 2);
+        fg[13] = s_back;
+
+        fg[14] = position_x(m_iGoalPosition.m_dX, m_iGoalPosition.m_dYaw, polyparam_set_back[0], polyparam_set_back[1],
+                            polyparam_set_back[2], polyparam_set_back[3], polyparam_set_back[4]) -
+                 middle_x;
+        fg[15] = position_y(m_iGoalPosition.m_dY, m_iGoalPosition.m_dYaw, polyparam_set_back[0], polyparam_set_back[1],
+                            polyparam_set_back[2], polyparam_set_back[3], polyparam_set_back[4]) -
+                 middle_y;
+        fg[16] = theta(m_iGoalPosition.m_dYaw, polyparam_set_back[0], polyparam_set_back[1], polyparam_set_back[2],
+                       polyparam_set_back[3], polyparam_set_back[4]) -
+                 middle_yaw;
+
+        fg[17] = middle_x;
+        fg[18] = middle_y;
+        fg[19] = middle_yaw;
+        fg[20] = k_back3 - k_front3;
 
         return;
     }
@@ -340,10 +419,10 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
         size_t nx = 5;  // number of varibles
         size_t ng = 8;  // number of constraints
         Dvector v(nx);  // initial condition of varibles
-        v[0] = 0.0;     // a0
-        v[1] = 0.0;     // a1
-        v[2] = 0.0;     // a2
-        v[3] = 0.0;     // a3
+        v[0] = 0.0;     // k0
+        v[1] = 0.0;     // k1
+        v[2] = 0.0;     // k2
+        v[3] = 0.0;     // k3
         v[4] = 10.0;    // s
 
         // lower and upper bounds for varibles
@@ -381,10 +460,10 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
         size_t nx = 5;  // number of varibles
         size_t ng = 5;  // number of constraints
         Dvector v(nx);  // initial condition of varibles
-        v[0] = 0.0;     // a0
-        v[1] = 0.0;     // a1
-        v[2] = 0.0;     // a2
-        v[3] = 0.0;     // a3
+        v[0] = 0.0;     // k0
+        v[1] = 0.0;     // k1
+        v[2] = 0.0;     // k2
+        v[3] = 0.0;     // k3
         v[4] = 10.0;    // s
 
         // lower and upper bounds for varibles
@@ -406,6 +485,74 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
         gu[3] = 1.0e19;
         gl[4] = -20.0;  // s
         gu[4] = 20.0;
+
+        // solve the problem
+        CppAD::ipopt::solve<Dvector, CFG_eval>(strOptions, v, xl, xu, gl, gu, *m_ptrFG_eval, solution);
+        uSIndex = 4;
+    }
+    else if ("dual_path" == m_strPlanner)
+    {
+        size_t nx = 13;  // number of varibles
+        size_t ng = 11;  // number of constraints
+        Dvector v(nx);   // initial condition of varibles
+        v[0] = 0.0;      // k_front0
+        v[1] = 0.0;      // k_front1
+        v[2] = 0.0;      // k_front2
+        v[3] = 0.0;      // k_front3
+        v[4] = 10.0;     // s_front
+
+        v[5] = 0.0;   // k_back0
+        v[6] = 0.0;   // k_back1
+        v[7] = 0.0;   // k_back2
+        v[8] = 0.0;   // k_back3
+        v[9] = 10.0;  // s_back
+
+        v[10] = 0.0;  // middle_x
+        v[11] = 0.0;  // middle_y
+        v[12] = 0.0;  // middle_yaw
+
+        // lower and upper bounds for varibles
+        Dvector xl(nx), xu(nx);
+        for (i = 0; i < nx; i++)
+        {
+            xl[i] = -100;
+            xu[i] = +100;
+        }
+
+        Dvector gl(ng), gu(ng);
+        gl[0] = 0;  // k_front0
+        gu[0] = 0;
+        gl[1] = 0;  // kmax^2-k_front1^2
+        gu[1] = 1.0e19;
+        gl[2] = 0;  // kmax^2-k_front2^2
+        gu[2] = 1.0e19;
+        gl[3] = 0;  // kmax^2-k_front3^2
+        gu[3] = 1.0e19;
+        gl[4] = -1.0e2;  // s_front
+        gu[4] = 1.0e2;
+        gl[5] = -0.0;  // x_end_front-x_middle
+        gu[5] = 0.0;
+        gl[6] = -0.0;  // y_end_front-y_middle
+        gu[6] = 0.0;
+        gl[7] = -0.0;  // yaw_end_front-yaw_middle
+        gu[7] = 0.0;
+
+        gl[8] = 0;  // k_back0
+        gu[8] = 0;
+        gl[9] = 0;  // kmax^2-k_back1^2
+        gu[9] = 1.0e19;
+        gl[10] = 0;  // kmax^2-k_back2^2
+        gu[10] = 1.0e19;
+        gl[11] = 0;  // kmax^2-k_back3^2
+        gu[11] = 1.0e19;
+        gl[12] = -1.0e2;  // s_back
+        gu[12] = 1.0e2;
+        gl[13] = -0.0;  // x_end_back-x_middle
+        gu[13] = 0.0;
+        gl[14] = -0.0;  // y_end_back-y_middle
+        gu[14] = 0.0;
+        gl[15] = -0.0;  // yaw_end_back-yaw_middle
+        gu[15] = 0.0;
 
         // solve the problem
         CppAD::ipopt::solve<Dvector, CFG_eval>(strOptions, v, xl, xu, gl, gu, *m_ptrFG_eval, solution);

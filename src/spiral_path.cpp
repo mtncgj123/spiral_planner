@@ -64,6 +64,7 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
     double dYaw_goal = m_iGoalPosition.m_dYaw;
 
     double dSoft_constraints_coef = 1000.0;
+    double dS_cost_coef = 0.1;
 
     if ("origin" == m_strPlanner)
     {
@@ -71,7 +72,8 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
                 (pow(a2, 2) + 2 * a3 * a1 + 9 * pow(a3, 2)) / 5.0 * pow(s, 5) +
                 (2 * a3 * a0 + 2 * a2 * a1 + 12 * a2 * a3) / 4.0 * pow(s, 4) +
                 (pow(a1, 2) + 2 * a2 * a0 + 4 * pow(a2, 2) + 6 * a1 * a3) / 3.0 * pow(s, 3) +
-                (2 * a1 * a0 + 4 * a1 * a2) / 2.0 * pow(s, 2) + (pow(a0, 2) + pow(a1, 2)) * s);
+                (2 * a1 * a0 + 4 * a1 * a2) / 2.0 * pow(s, 2) + (pow(a0, 2) + pow(a1, 2)) * s) *
+               s / fabs(s);
     }
     else if ("soft" == m_strPlanner)
     {
@@ -79,7 +81,8 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
                 (pow(a2, 2) + 2 * a3 * a1 + 9 * pow(a3, 2)) / 5.0 * pow(s, 5) +
                 (2 * a3 * a0 + 2 * a2 * a1 + 12 * a2 * a3) / 4.0 * pow(s, 4) +
                 (pow(a1, 2) + 2 * a2 * a0 + 4 * pow(a2, 2) + 6 * a1 * a3) / 3.0 * pow(s, 3) +
-                (2 * a1 * a0 + 4 * a1 * a2) / 2.0 * pow(s, 2) + (pow(a0, 2) + pow(a1, 2)) * s) +
+                (2 * a1 * a0 + 4 * a1 * a2) / 2.0 * pow(s, 2) + (pow(a0, 2) + pow(a1, 2)) * s) *
+                   s / fabs(s) +
                dSoft_constraints_coef * pow(position_x(dX_init, dYaw_init, a0, a1, a2, a3, s) - dX_goal, 2) +
                dSoft_constraints_coef * pow(position_y(dY_init, dYaw_init, a0, a1, a2, a3, s) - dY_goal, 2) +
                dSoft_constraints_coef * pow(theta(dYaw_init, a0, a1, a2, a3, s) - dYaw_goal, 2);
@@ -90,7 +93,9 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
                 (pow(a2, 2) + 2 * a3 * a1 + 9 * pow(a3, 2)) / 5.0 * pow(s, 5) +
                 (2 * a3 * a0 + 2 * a2 * a1 + 12 * a2 * a3) / 4.0 * pow(s, 4) +
                 (pow(a1, 2) + 2 * a2 * a0 + 4 * pow(a2, 2) + 6 * a1 * a3) / 3.0 * pow(s, 3) +
-                (2 * a1 * a0 + 4 * a1 * a2) / 2.0 * pow(s, 2) + (pow(a0, 2) + pow(a1, 2)) * s);
+                (2 * a1 * a0 + 4 * a1 * a2) / 2.0 * pow(s, 2) + (pow(a0, 2) + pow(a1, 2)) * s) *
+                   s / fabs(s) +
+               dS_cost_coef * s * s;
     }
     else
     {
@@ -528,8 +533,8 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
         gu[2] = 1.0e19;
         gl[3] = 0;  // kmax^2-k_front3^2
         gu[3] = 1.0e19;
-        gl[4] = -20.0;  // s_front
-        gu[4] = 20.0;
+        gl[4] = -10.0;  // s_front
+        gu[4] = 10.0;
         gl[5] = -0.0;  // x_end_front-x_middle
         gu[5] = 0.0;
         gl[6] = -0.0;  // y_end_front-y_middle
@@ -545,8 +550,8 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
         gu[10] = 1.0e19;
         gl[11] = 0;  // kmax^2-k_back3^2
         gu[11] = 1.0e19;
-        gl[12] = -20.0;  // s_back
-        gu[12] = 20.0;
+        gl[12] = -10.0;  // s_back
+        gu[12] = 10.0;
         gl[13] = -0.0;  // x_end_back-x_middle
         gu[13] = 0.0;
         gl[14] = -0.0;  // y_end_back-y_middle

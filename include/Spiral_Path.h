@@ -48,6 +48,7 @@ class CFG_eval
     void setGoalPosition(const sPosition iGoalPosition) { this->m_iGoalPosition = iGoalPosition; };
     void setPlanner(const std::string strPlanner) { this->m_strPlanner = strPlanner; };
     void operator()(ADvector& fg, const ADvector& p);
+    void checkCurv(const std::vector<AD<double>>& res_a, const double& dMaxCurv, std::vector<double>& vecInvalidS);
 
   private:
     sPosition m_iStartPosition;
@@ -82,8 +83,8 @@ class CShort_Distance_Planner
 
     double m_dS_cost_coef;
     double m_Goal_cost_tolerence;
-    double m_dCircle_path_r_max = 5.0;
-    double m_dCircle_path_r_min = 3.0;
+    double m_dMin_curv_r = 2.5;
+    double m_dMax_curv = 1 / m_dMin_curv_r;
     std::string m_strPlanner;
 
     // circle path plan
@@ -114,6 +115,13 @@ class CShort_Distance_Planner
     void CalcSolFlag(const sPosition& iStartPosition, const sPosition& iGoalPosition, const double& dS,
                      const double& dSpiral_path_last_x, const double& dSpiral_path_last_y,
                      const double& dSpiral_path_last_yaw, bool& bSFlag);
+    void PathCombination(
+        std::vector<double>& vecSpiral_path_x, std::vector<double>& vecSpiral_path_y,
+        std::vector<double>& vecSpiral_path_yaw, std::vector<double>& vecSpiral_path_curv,
+        const std::vector<double>& vecSpiral_path_x_front, const std::vector<double>& vecSpiral_path_y_front,
+        const std::vector<double>& vecSpiral_path_yaw_front, const std::vector<double>& vecSpiral_path_curv_front,
+        const std::vector<double>& vecSpiral_path_x_back, const std::vector<double>& vecSpiral_path_y_back,
+        const std::vector<double>& vecSpiral_path_yaw_back, const std::vector<double>& vecSpiral_path_curv_back);
 };
 
 #endif

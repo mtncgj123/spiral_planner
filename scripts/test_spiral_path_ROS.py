@@ -10,6 +10,10 @@ from _line import line
 
 if __name__ == "__main__":
 
+    min_r = 2.5
+    max_k = 1/min_r
+    step_s = 0.01
+
     rospy.init_node("test_ros")
     client_spi = rospy.ServiceProxy("spiral_plan_request", spiral)
     client_spi.wait_for_service()
@@ -20,8 +24,8 @@ if __name__ == "__main__":
     client_line = rospy.ServiceProxy("line_plan_request", line)
     client_line.wait_for_service()
 
-    x_init, y_init, yaw_init = 22.997613, 2.005575, 178*pi/180
-    x_goal, y_goal, yaw_goal = 26.000000, 3.000000, 90*pi/180
+    x_init, y_init, yaw_init = 22.997613, 2.005575, 170*pi/180
+    x_goal, y_goal, yaw_goal = 24.000000, 3.000000, 60*pi/180
 
     start_position = [x_init, y_init, yaw_init]
     goal_position = [x_goal, y_goal, yaw_goal]
@@ -47,6 +51,7 @@ if __name__ == "__main__":
         polypath_y.append(traj.poses[i].position.y)
         polypath_yaw.append(traj.poses[i].orientation.z)
         polypath_curv.append(traj.poses[i].orientation.w)
+    polypath_s = [step_s*i for i in range(0, len(polypath_x))]
     min_curv_r = response.min_curvr
     s_flag = response.s_flag
     print("min curvr", min_curv_r)
@@ -67,8 +72,11 @@ if __name__ == "__main__":
         ax1.legend(['Spiral Path'])
 
         # 绘制第二个图
-        ax2.plot(polypath_curv, 'g--')
+        ax2.plot(polypath_s, polypath_curv, 'g--')
+        ax2.axhline(y=max_k, color='red', linestyle='--', linewidth=2)  # 绘制虚线
+        ax2.axhline(y=-max_k, color='red', linestyle='--', linewidth=2)  # 绘制虚线
         ax2.set_title('Curv')
+        ax2.set_xlabel('s')
         ax2.set_ylabel('curv')
         ax2.legend(['Curvature'])
         ax2.set_ylim(-1.5, 1.5)
@@ -81,6 +89,8 @@ if __name__ == "__main__":
     else:
         # 绘制路径
         plt.plot(polypath_x, polypath_y, 'g--')
+        plt.axhline(y=max_k, color='red', linestyle='--', linewidth=2)  # 绘制虚线
+        plt.axhline(y=-max_k, color='red', linestyle='--', linewidth=2)  # 绘制虚线
         plt.title('Spiral Path')
         plt.xlabel('x')
         plt.ylabel('y')

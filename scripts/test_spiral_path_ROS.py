@@ -8,6 +8,13 @@ from _circle import circle
 from _line import line
 
 
+class Position:
+    def __init__(self, position_x, position_y, position_yaw):
+        self.x = position_x
+        self.y = position_y
+        self.yaw = position_yaw
+
+
 if __name__ == "__main__":
 
     min_r = 2.5
@@ -24,11 +31,37 @@ if __name__ == "__main__":
     client_line = rospy.ServiceProxy("line_plan_request", line)
     client_line.wait_for_service()
 
-    x_init, y_init, yaw_init = 22.997613, 2.005575, 170*pi/180
-    x_goal, y_goal, yaw_goal = 24.000000, 3.000000, 60*pi/180
+    start_position_list = []
+    goal_position_list = []
+    start_position_list.append(Position(22.997613, 2.005575, 0*pi/180))  # 0
+    goal_position_list.append(Position(24.000000, 3.000000, -60*pi/180))
 
-    start_position = [x_init, y_init, yaw_init]
-    goal_position = [x_goal, y_goal, yaw_goal]
+    start_position_list.append(Position(22.997613, 2.005575, 0*pi/180))  # 1
+    goal_position_list.append(Position(24.000000, 3.000000, 0*pi/180))
+
+    start_position_list.append(Position(22.997613, 2.005575, 0*pi/180))  # 2
+    goal_position_list.append(Position(24.000000, 3.000000, -90*pi/180))
+
+    start_position_list.append(Position(22.997613, 2.005575, 170*pi/180))  # 3
+    goal_position_list.append(Position(24.000000, 3.000000, 120*pi/180))
+
+    start_position_list.append(Position(22.997613, 2.005575, 30*pi/180))  # 4
+    goal_position_list.append(Position(24.000000, 3.000000, 30*pi/180))
+
+    start_position_list.append(Position(22.997613, 2.005575, 170*pi/180))  # 5
+    goal_position_list.append(Position(24.000000, 3.000000, 90*pi/180))
+
+    start_position_list.append(Position(22.997613, 2.005575, 90*pi/180))  # 6
+    goal_position_list.append(Position(24.000000, 3.000000, 0*pi/180))
+
+    start_position_list.append(Position(22.997613, 2.005575, 90*pi/180))  # 7
+    goal_position_list.append(Position(23.000000, 2.000000, 0*pi/180))
+
+    test_index = 7
+    start_position = [start_position_list[test_index].x,
+                      start_position_list[test_index].y, start_position_list[test_index].yaw]
+    goal_position = [goal_position_list[test_index].x,
+                     goal_position_list[test_index].y, goal_position_list[test_index].yaw]
 
     _start_position = Point()
     _goal_position = Point()

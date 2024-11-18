@@ -49,11 +49,20 @@ class CFG_eval
     void setPlanner(const std::string strPlanner) { this->m_strPlanner = strPlanner; };
     void operator()(ADvector& fg, const ADvector& p);
     void checkCurv(const std::vector<AD<double>>& res_a, const double& dMaxCurv, std::vector<double>& vecInvalidS);
+    void setInvalidS(const std::vector<double>& vecInvalidS_front, const std::vector<double>& vecInvalidS_back)
+    {
+        this->m_vecInvalidS_front.insert(m_vecInvalidS_front.end(), vecInvalidS_front.begin(), vecInvalidS_front.end());
+        this->m_vecInvalidS_back.insert(m_vecInvalidS_back.end(), vecInvalidS_back.begin(), vecInvalidS_back.end());
+    };
+    muint getInvalidSSize() const { return m_vecInvalidS_back.size() + m_vecInvalidS_front.size(); }
+    void reset();
 
   private:
     sPosition m_iStartPosition;
     sPosition m_iGoalPosition;
     std::string m_strPlanner;
+
+    std::vector<double> m_vecInvalidS_front, m_vecInvalidS_back;
 
     double m_dMin_curv_r = 2.5;
     double m_dMax_curv = 1 / m_dMin_curv_r;
@@ -85,7 +94,13 @@ class CShort_Distance_Planner
     double m_Goal_cost_tolerence;
     double m_dMin_curv_r = 2.5;
     double m_dMax_curv = 1 / m_dMin_curv_r;
+
     std::string m_strPlanner;
+
+    muint m_uCurrent_iter = 0;
+    muint m_uMax_iter = 10;
+
+    bool m_bSolStatus = false;
 
     // circle path plan
     int circle_origin_flag(sPosition iStartPosition, sPosition iGoalPosition);
@@ -122,6 +137,7 @@ class CShort_Distance_Planner
         const std::vector<double>& vecSpiral_path_yaw_front, const std::vector<double>& vecSpiral_path_curv_front,
         const std::vector<double>& vecSpiral_path_x_back, const std::vector<double>& vecSpiral_path_y_back,
         const std::vector<double>& vecSpiral_path_yaw_back, const std::vector<double>& vecSpiral_path_curv_back);
+    void printInvalidS(const std::vector<double>& vecInvalidS_front, const std::vector<double>& vecInvalidS_back);
 };
 
 #endif

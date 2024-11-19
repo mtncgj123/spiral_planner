@@ -25,12 +25,6 @@ if __name__ == "__main__":
     client_spi = rospy.ServiceProxy("spiral_plan_request", spiral)
     client_spi.wait_for_service()
 
-    client_circle = rospy.ServiceProxy("circle_plan_request", circle)
-    client_circle.wait_for_service()
-
-    client_line = rospy.ServiceProxy("line_plan_request", line)
-    client_line.wait_for_service()
-
     start_position_list = []
     goal_position_list = []
     start_position_list.append(Position(22.997613, 2.005575, 0*pi/180))  # 0
@@ -57,7 +51,13 @@ if __name__ == "__main__":
     start_position_list.append(Position(22.997613, 2.005575, 90*pi/180))  # 7
     goal_position_list.append(Position(23.000000, 2.000000, 0*pi/180))
 
-    test_index = 7
+    start_position_list.append(Position(22.997613, 2.005575, 170*pi/180))  # 8
+    goal_position_list.append(Position(25.000000, 3.000000, 0*pi/180))
+
+    start_position_list.append(Position(22.997613, 2.005575, 30*pi/180))  # 9
+    goal_position_list.append(Position(25.000000, 3.000000, 0*pi/180))
+
+    test_index = 8
     start_position = [start_position_list[test_index].x,
                       start_position_list[test_index].y, start_position_list[test_index].yaw]
     goal_position = [goal_position_list[test_index].x,

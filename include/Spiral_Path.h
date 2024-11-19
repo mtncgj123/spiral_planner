@@ -102,15 +102,6 @@ class CShort_Distance_Planner
 
     bool m_bSolStatus = false;
 
-    // circle path plan
-    int circle_origin_flag(sPosition iStartPosition, sPosition iGoalPosition);
-    sPosition circle_origin_finder(sPosition iStartPosition, double r, int flag);
-    std::vector<sPosition> circle_path_finder(sPosition iStartPosition, sPosition origin_position, double yaw_inter,
-                                              int flag);
-
-    // line path plan
-    std::vector<sPosition> line_path_finder(sPosition start_positio, int direction, double distance);
-
     // spiral path plan
     std::vector<double> cumulative_trapezoid(const std::vector<double>& vecDiscrete_function_value,
                                              const std::vector<double>& vecX_set, const double dInitial);
@@ -139,7 +130,8 @@ class CShort_Distance_Planner
     void printInvalidS(const std::vector<double>& vecInvalidS_front, const std::vector<double>& vecInvalidS_back);
     void CalcPath(std::vector<double>& vecSpiral_path_x, std::vector<double>& vecSpiral_path_y,
                   std::vector<double>& vecSpiral_path_yaw, std::vector<double>& vecSpiral_path_curv,
-                  CppAD::ipopt::solve_result<Dvector> solution);
+                  CppAD::ipopt::solve_result<Dvector> solution, const muint uSIndex, const sPosition& iStartPosition,
+                  const sPosition& iGoalPosition, double& dS, double& dMin_curvr);
 };
 
 #endif

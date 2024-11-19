@@ -107,6 +107,16 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
                    s / fabs(s) +
                dS_cost_coef * s * s;
     }
+    else if ("triple_path" == m_strPlanner)
+    {
+        return (pow(a3, 2) / 7.0 * pow(s, 7) + 2 / 6.0 * a3 * a2 * pow(s, 6) +
+                (pow(a2, 2) + 2 * a3 * a1 + 9 * pow(a3, 2)) / 5.0 * pow(s, 5) +
+                (2 * a3 * a0 + 2 * a2 * a1 + 12 * a2 * a3) / 4.0 * pow(s, 4) +
+                (pow(a1, 2) + 2 * a2 * a0 + 4 * pow(a2, 2) + 6 * a1 * a3) / 3.0 * pow(s, 3) +
+                (2 * a1 * a0 + 4 * a1 * a2) / 2.0 * pow(s, 2) + (pow(a0, 2) + pow(a1, 2)) * s) *
+                   s / fabs(s) +
+               dS_cost_coef * s * s;
+    }
     else
     {
         MERR("Planner type invalid");
@@ -399,6 +409,110 @@ void CFG_eval::operator()(ADvector& fg, const ADvector& p)
                      m_vecInvalidS_back[i]);
             MWARN("vecInvalidS_backi:%6.3f", m_vecInvalidS_back[i]);
         }
+
+        return;
+    }
+    else if ("triple_path" == m_strPlanner)
+    {
+        assert(p.size() == 21);
+        assert(fg.size() == 33);
+        // variables
+        AD<double> k_front0 = p[0];
+        AD<double> k_front1 = p[1];
+        AD<double> k_front2 = p[2];
+        AD<double> k_front3 = p[3];
+        AD<double> s_front = p[4];
+
+        AD<double> k_inter0 = p[5];
+        AD<double> k_inter1 = p[6];
+        AD<double> k_inter2 = p[7];
+        AD<double> k_inter3 = p[8];
+        AD<double> s_inter = p[9];
+
+        AD<double> k_back0 = p[10];
+        AD<double> k_back1 = p[11];
+        AD<double> k_back2 = p[12];
+        AD<double> k_back3 = p[13];
+        AD<double> s_back = p[14];
+
+        AD<double> middle_x_front = p[15];
+        AD<double> middle_y_front = p[16];
+        AD<double> middle_yaw_front = p[17];
+
+        AD<double> middle_x_back = p[18];
+        AD<double> middle_y_back = p[19];
+        AD<double> middle_yaw_back = p[20];
+
+        std::vector<AD<double>> polyparam_set_front = mapping_k2a(k_front0, k_front1, k_front2, k_front3, s_front);
+        std::vector<AD<double>> polyparam_set_inter = mapping_k2a(k_inter0, k_inter1, k_inter2, k_inter3, s_inter);
+        std::vector<AD<double>> polyparam_set_back = mapping_k2a(k_back0, k_back1, k_back2, k_back3, s_back);
+        fg[0] = cost(polyparam_set_front[0], polyparam_set_front[1], polyparam_set_front[2], polyparam_set_front[3],
+                     polyparam_set_front[4]) +
+                cost(polyparam_set_inter[0], polyparam_set_inter[1], polyparam_set_inter[2], polyparam_set_inter[3],
+                     polyparam_set_inter[4]) +
+                cost(polyparam_set_back[0], polyparam_set_back[1], polyparam_set_back[2], polyparam_set_back[3],
+                     polyparam_set_back[4]);
+
+        // constraints
+        fg[1] = k_front0;
+        fg[2] = k_front1;
+        fg[3] = k_front2;
+        fg[4] = k_front3;
+        fg[5] = s_front;
+
+        fg[6] =
+            position_x(m_iStartPosition.m_dX, m_iStartPosition.m_dYaw, polyparam_set_front[0], polyparam_set_front[1],
+                       polyparam_set_front[2], polyparam_set_front[3], polyparam_set_front[4]) -
+            middle_x_front;
+        fg[7] =
+            position_y(m_iStartPosition.m_dY, m_iStartPosition.m_dYaw, polyparam_set_front[0], polyparam_set_front[1],
+                       polyparam_set_front[2], polyparam_set_front[3], polyparam_set_front[4]) -
+            middle_y_front;
+        fg[8] = theta(m_iStartPosition.m_dYaw, polyparam_set_front[0], polyparam_set_front[1], polyparam_set_front[2],
+                      polyparam_set_front[3], polyparam_set_front[4]) -
+                middle_yaw_front;
+
+        fg[9] = k_inter0;
+        fg[10] = k_inter1;
+        fg[11] = k_inter2;
+        fg[12] = k_inter3;
+        fg[13] = s_inter;
+
+        fg[14] = position_x(middle_x_front, middle_yaw_front, polyparam_set_inter[0], polyparam_set_inter[1],
+                            polyparam_set_inter[2], polyparam_set_inter[3], polyparam_set_inter[4]) -
+                 middle_x_back;
+        fg[15] = position_y(middle_y_front, middle_yaw_front, polyparam_set_inter[0], polyparam_set_inter[1],
+                            polyparam_set_inter[2], polyparam_set_inter[3], polyparam_set_inter[4]) -
+                 middle_y_back;
+        fg[16] = theta(middle_yaw_front, polyparam_set_inter[0], polyparam_set_inter[1], polyparam_set_inter[2],
+                       polyparam_set_inter[3], polyparam_set_inter[4]) -
+                 middle_yaw_back;
+
+        fg[17] = middle_x_front;
+        fg[18] = middle_y_front;
+        fg[19] = middle_yaw_front;
+        fg[20] = middle_x_back;
+        fg[21] = middle_y_back;
+        fg[22] = middle_yaw_back;
+
+        fg[23] = k_back0;
+        fg[24] = k_back1;
+        fg[25] = k_back2;
+        fg[26] = k_back3;
+        fg[27] = s_back;
+
+        fg[28] = position_x(m_iGoalPosition.m_dX, m_iGoalPosition.m_dYaw, polyparam_set_back[0], polyparam_set_back[1],
+                            polyparam_set_back[2], polyparam_set_back[3], polyparam_set_back[4]) -
+                 middle_x_back;
+        fg[29] = position_y(m_iGoalPosition.m_dY, m_iGoalPosition.m_dYaw, polyparam_set_back[0], polyparam_set_back[1],
+                            polyparam_set_back[2], polyparam_set_back[3], polyparam_set_back[4]) -
+                 middle_y_back;
+        fg[30] = theta(m_iGoalPosition.m_dYaw, polyparam_set_back[0], polyparam_set_back[1], polyparam_set_back[2],
+                       polyparam_set_back[3], polyparam_set_back[4]) -
+                 middle_yaw_back;
+
+        fg[31] = k_inter0 - k_front3;
+        fg[32] = k_inter3 - k_back3;
 
         return;
     }
@@ -737,6 +851,123 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
         CppAD::ipopt::solve<Dvector, CFG_eval>(strOptions, v, xl, xu, gl, gu, *m_ptrFG_eval, solution);
         uSIndex = 4;
     }
+    else if ("triple_path" == m_strPlanner)
+    {
+        size_t nx = 21;  // number of varibles
+        size_t ng = 32;  // number of constraints
+        Dvector v(nx);   // initial condition of varibles
+        v[0] = 0.0;      // k_front0
+        v[1] = 0.0;      // k_front1
+        v[2] = 0.0;      // k_front2
+        v[3] = 0.0;      // k_front3
+        v[4] = 10.0;     // s_front
+
+        v[5] = 0.0;   // k_inter0
+        v[6] = 0.0;   // k_inter1
+        v[7] = 0.0;   // k_inter2
+        v[8] = 0.0;   // k_inter3
+        v[9] = 10.0;  // s_inter
+
+        v[10] = 0.0;   // k_back0
+        v[11] = 0.0;   // k_back1
+        v[12] = 0.0;   // k_back2
+        v[13] = 0.0;   // k_back3
+        v[14] = 10.0;  // s_back
+
+        v[15] = 0.0;  // middle_x_front
+        v[16] = 0.0;  // middle_y_front
+        v[17] = 0.0;  // middle_yaw_front
+
+        v[18] = 0.0;  // middle_x_back
+        v[19] = 0.0;  // middle_y_back
+        v[20] = 0.0;  // middle_yaw_back
+
+        // lower and upper bounds for varibles
+        Dvector xl(nx), xu(nx);
+        for (i = 0; i < nx; i++)
+        {
+            xl[i] = -100;
+            xu[i] = +100;
+        }
+
+        Dvector gl(ng), gu(ng);
+        gl[0] = 0;  // k_front0
+        gu[0] = 0;
+        gl[1] = -m_dMax_curv;  // k_front1
+        gu[1] = m_dMax_curv;
+        gl[2] = -m_dMax_curv;  // k_front2
+        gu[2] = m_dMax_curv;
+        gl[3] = -m_dMax_curv;  // k_front3
+        gu[3] = m_dMax_curv;
+        gl[4] = -10.0;  // s_front
+        gu[4] = 10.0;
+
+        gl[5] = -0.0;  // x_end_front-x_middle_front
+        gu[5] = 0.0;
+        gl[6] = -0.0;  // y_end_front-y_middle_front
+        gu[6] = 0.0;
+        gl[7] = -0.0;  // yaw_end_front-yaw_middle_front
+        gu[7] = 0.0;
+
+        gl[8] = -m_dMax_curv;  // k_inter0
+        gu[8] = m_dMax_curv;
+        gl[9] = -m_dMax_curv;  // k_inter1
+        gu[9] = m_dMax_curv;
+        gl[10] = -m_dMax_curv;  // k_inter2
+        gu[10] = m_dMax_curv;
+        gl[11] = -m_dMax_curv;  // k_inter3
+        gu[11] = m_dMax_curv;
+        gl[12] = -10.0;  // s_inter
+        gu[12] = 10.0;
+
+        gl[13] = -0.0;  // x_middle_front-x_middle_back
+        gu[13] = 0.0;
+        gl[14] = -0.0;  // y_moddle_front-y_middle_back
+        gu[14] = 0.0;
+        gl[15] = -0.0;  // yaw_middle_front-yaw_middle_back
+        gu[15] = 0.0;
+
+        gl[16] = 24.0;  // x_middle_front
+        gu[16] = 30.0;
+        gl[17] = -20.0;  // y_middle_front
+        gu[17] = 20.0;
+        gl[18] = std::max(iStartPosition.m_dYaw, iGoalPosition.m_dYaw) - 3.14159;  // yaw_middle_front
+        gu[18] = std::min(iStartPosition.m_dYaw, iGoalPosition.m_dYaw) + 3.14159;
+
+        gl[19] = 24.0;  // x_middle_back
+        gu[19] = 30.0;
+        gl[20] = -20.0;  // y_middle_back
+        gu[20] = 20.0;
+        gl[21] = std::max(iStartPosition.m_dYaw, iGoalPosition.m_dYaw) - 3.14159;  // yaw_middle_back
+        gu[21] = std::min(iStartPosition.m_dYaw, iGoalPosition.m_dYaw) + 3.14159;
+
+        gl[22] = -0.0;  // k_back0
+        gu[22] = 0.0;
+        gl[23] = -m_dMax_curv;  // k_back1
+        gu[23] = m_dMax_curv;
+        gl[24] = -m_dMax_curv;  // k_back2
+        gu[24] = m_dMax_curv;
+        gl[25] = -m_dMax_curv;  // k_back3
+        gu[25] = m_dMax_curv;
+        gl[26] = -10.0;  // s_back
+        gu[26] = 10.0;
+
+        gl[27] = -0.0;  // x_end_back-x_middle_end
+        gu[27] = 0.0;
+        gl[28] = -0.0;  // y_end_back-y_middle_end
+        gu[28] = 0.0;
+        gl[29] = -0.0;  // yaw_end_back-yaw_middle_end
+        gu[29] = 0.0;
+
+        gl[30] = -0.0;  // k3_front-k0_inter
+        gu[30] = 0.0;
+        gl[31] = -0.0;  // k3_inter-k3_back
+        gu[31] = 0.0;
+
+        // solve the problem
+        CppAD::ipopt::solve<Dvector, CFG_eval>(strOptions, v, xl, xu, gl, gu, *m_ptrFG_eval, solution);
+        uSIndex = 4;
+    }
     else if ("dual_path_with_limit_check" == m_strPlanner)
     {
         while ((m_uCurrent_iter <= m_uMax_iter) && false == m_bSolStatus)
@@ -846,6 +1077,8 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
             }
         }
     }
+
+    CalcPath(vecSpiral_path_x, vecSpiral_path_y, vecSpiral_path_yaw, vecSpiral_path_curv);
 
     std::vector<AD<double>> res_a_front =
         m_ptrFG_eval->mapping_k2a((solution.x)[0], (solution.x)[1], (solution.x)[2], (solution.x)[3], (solution.x)[4]);
@@ -1155,25 +1388,26 @@ void CShort_Distance_Planner::PathCombination(
     std::vector<double>& vecSpiral_path_yaw, std::vector<double>& vecSpiral_path_curv,
     const std::vector<double>& vecSpiral_path_x_front, const std::vector<double>& vecSpiral_path_y_front,
     const std::vector<double>& vecSpiral_path_yaw_front, const std::vector<double>& vecSpiral_path_curv_front,
-    const std::vector<double>& vecSpiral_path_x_back, const std::vector<double>& vecSpiral_path_y_back,
-    const std::vector<double>& vecSpiral_path_yaw_back, const std::vector<double>& vecSpiral_path_curv_back)
+    const bool bIsReverse)
 {
-    vecSpiral_path_x.clear();
-    vecSpiral_path_y.clear();
-    vecSpiral_path_yaw.clear();
-    vecSpiral_path_curv.clear();
-    vecSpiral_path_x.insert(vecSpiral_path_x.end(), vecSpiral_path_x_front.begin(), vecSpiral_path_x_front.end());
-    vecSpiral_path_x.insert(vecSpiral_path_x.end(), vecSpiral_path_x_back.rbegin(), vecSpiral_path_x_back.rend());
-    vecSpiral_path_y.insert(vecSpiral_path_y.end(), vecSpiral_path_y_front.begin(), vecSpiral_path_y_front.end());
-    vecSpiral_path_y.insert(vecSpiral_path_y.end(), vecSpiral_path_y_back.rbegin(), vecSpiral_path_y_back.rend());
-    vecSpiral_path_yaw.insert(vecSpiral_path_yaw.end(), vecSpiral_path_yaw_front.begin(),
-                              vecSpiral_path_yaw_front.end());
-    vecSpiral_path_yaw.insert(vecSpiral_path_yaw.end(), vecSpiral_path_yaw_back.rbegin(),
-                              vecSpiral_path_yaw_back.rend());
-    vecSpiral_path_curv.insert(vecSpiral_path_curv.end(), vecSpiral_path_curv_front.begin(),
-                               vecSpiral_path_curv_front.end());
-    vecSpiral_path_curv.insert(vecSpiral_path_curv.end(), vecSpiral_path_curv_back.rbegin(),
-                               vecSpiral_path_curv_back.rend());
+    if (bIsReverse)
+    {
+        vecSpiral_path_x.insert(vecSpiral_path_x.end(), vecSpiral_path_x_front.rbegin(), vecSpiral_path_x_front.rend());
+        vecSpiral_path_y.insert(vecSpiral_path_y.end(), vecSpiral_path_y_front.rbegin(), vecSpiral_path_y_front.rend());
+        vecSpiral_path_yaw.insert(vecSpiral_path_yaw.end(), vecSpiral_path_yaw_front.rbegin(),
+                                  vecSpiral_path_yaw_front.rend());
+        vecSpiral_path_curv.insert(vecSpiral_path_curv.end(), vecSpiral_path_curv_front.rbegin(),
+                                   vecSpiral_path_curv_front.rend());
+    }
+    else
+    {
+        vecSpiral_path_x.insert(vecSpiral_path_x.end(), vecSpiral_path_x_front.begin(), vecSpiral_path_x_front.end());
+        vecSpiral_path_y.insert(vecSpiral_path_y.end(), vecSpiral_path_y_front.begin(), vecSpiral_path_y_front.end());
+        vecSpiral_path_yaw.insert(vecSpiral_path_yaw.end(), vecSpiral_path_yaw_front.begin(),
+                                  vecSpiral_path_yaw_front.end());
+        vecSpiral_path_curv.insert(vecSpiral_path_curv.end(), vecSpiral_path_curv_front.begin(),
+                                   vecSpiral_path_curv_front.end());
+    }
 }
 
 void CShort_Distance_Planner::printInvalidS(const std::vector<double>& vecInvalidS_front,
@@ -1186,6 +1420,52 @@ void CShort_Distance_Planner::printInvalidS(const std::vector<double>& vecInvali
     for (muint i = 0; i < vecInvalidS_back.size(); ++i)
     {
         MWARN("InvalidS back:%6.3f", vecInvalidS_back[i]);
+    }
+}
+
+void CShort_Distance_Planner::CalcPath(std::vector<double>& vecSpiral_path_x, std::vector<double>& vecSpiral_path_y,
+                                       std::vector<double>& vecSpiral_path_yaw,
+                                       std::vector<double>& vecSpiral_path_curv,
+                                       CppAD::ipopt::solve_result<Dvector> solution, const muint uSIndex,
+                                       const sPosition& iStartPosition, const sPosition& iGoalPosition, double& dS,
+                                       double& dMin_curvr)
+{
+    if ("dual_path" == m_strPlanner)
+    {
+        std::vector<AD<double>> res_a_front = m_ptrFG_eval->mapping_k2a(
+            (solution.x)[0], (solution.x)[1], (solution.x)[2], (solution.x)[3], (solution.x)[4]);
+        std::vector<AD<double>> res_a_back = m_ptrFG_eval->mapping_k2a(
+            (solution.x)[5], (solution.x)[6], (solution.x)[7], (solution.x)[8], (solution.x)[9]);
+        MINF("obj_value:%6.3f", solution.obj_value);
+        printSolStatus(solution.status);
+
+        double dS_front = CppAD::Value(res_a_front[uSIndex]);
+        double dMin_curvr_front;
+        std::vector<double> vecSpiral_path_x_front, vecSpiral_path_y_front, vecSpiral_path_yaw_front,
+            vecSpiral_path_curv_front;
+        CalcDiscretePath(iStartPosition, dS_front, res_a_front, vecSpiral_path_x_front, vecSpiral_path_y_front,
+                         vecSpiral_path_yaw_front, vecSpiral_path_curv_front, dMin_curvr_front);
+
+        double dS_back = CppAD::Value(res_a_back[uSIndex]);
+        double dMin_curvr_back;
+        std::vector<double> vecSpiral_path_x_back, vecSpiral_path_y_back, vecSpiral_path_yaw_back,
+            vecSpiral_path_curv_back;
+        CalcDiscretePath(iGoalPosition, dS_back, res_a_back, vecSpiral_path_x_back, vecSpiral_path_y_back,
+                         vecSpiral_path_yaw_back, vecSpiral_path_curv_back, dMin_curvr_back);
+        dS = fabs(dS_front) + fabs(dS_back);
+        dMin_curvr = std::min(dMin_curvr_front, dMin_curvr_back);
+
+        std::vector<double> vecInvalidS_front, vecInvalidS_back;
+        m_ptrFG_eval->checkCurv(res_a_front, m_dMax_curv, vecInvalidS_front);
+        m_ptrFG_eval->checkCurv(res_a_back, m_dMax_curv, vecInvalidS_back);
+        printInvalidS(vecInvalidS_front, vecInvalidS_back);
+
+        PathCombination(vecSpiral_path_x, vecSpiral_path_y, vecSpiral_path_yaw, vecSpiral_path_curv,
+                        vecSpiral_path_x_front, vecSpiral_path_y_front, vecSpiral_path_yaw_front,
+                        vecSpiral_path_curv_front, false);
+        PathCombination(vecSpiral_path_x, vecSpiral_path_y, vecSpiral_path_yaw, vecSpiral_path_curv,
+                        vecSpiral_path_x_back, vecSpiral_path_y_back, vecSpiral_path_yaw_back, vecSpiral_path_curv_back,
+                        true);
     }
 }
 

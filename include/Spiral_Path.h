@@ -130,14 +130,16 @@ class CShort_Distance_Planner
     void CalcSolFlag(const sPosition& iStartPosition, const sPosition& iGoalPosition, const double& dS,
                      const double& dSpiral_path_last_x, const double& dSpiral_path_last_y,
                      const double& dSpiral_path_last_yaw, bool& bSFlag);
-    void PathCombination(
-        std::vector<double>& vecSpiral_path_x, std::vector<double>& vecSpiral_path_y,
-        std::vector<double>& vecSpiral_path_yaw, std::vector<double>& vecSpiral_path_curv,
-        const std::vector<double>& vecSpiral_path_x_front, const std::vector<double>& vecSpiral_path_y_front,
-        const std::vector<double>& vecSpiral_path_yaw_front, const std::vector<double>& vecSpiral_path_curv_front,
-        const std::vector<double>& vecSpiral_path_x_back, const std::vector<double>& vecSpiral_path_y_back,
-        const std::vector<double>& vecSpiral_path_yaw_back, const std::vector<double>& vecSpiral_path_curv_back);
+    void PathCombination(std::vector<double>& vecSpiral_path_x, std::vector<double>& vecSpiral_path_y,
+                         std::vector<double>& vecSpiral_path_yaw, std::vector<double>& vecSpiral_path_curv,
+                         const std::vector<double>& vecSpiral_path_x_front,
+                         const std::vector<double>& vecSpiral_path_y_front,
+                         const std::vector<double>& vecSpiral_path_yaw_front,
+                         const std::vector<double>& vecSpiral_path_curv_front, const bool bIsReverse);
     void printInvalidS(const std::vector<double>& vecInvalidS_front, const std::vector<double>& vecInvalidS_back);
+    void CalcPath(std::vector<double>& vecSpiral_path_x, std::vector<double>& vecSpiral_path_y,
+                  std::vector<double>& vecSpiral_path_yaw, std::vector<double>& vecSpiral_path_curv,
+                  CppAD::ipopt::solve_result<Dvector> solution);
 };
 
 #endif

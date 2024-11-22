@@ -57,6 +57,11 @@ class CFG_eval
     muint getInvalidSSize() const { return m_vecInvalidS_back.size() + m_vecInvalidS_front.size(); }
     void reset();
 
+    double cost(const double& a0, const double& a1, const double& a2, const double& a3, const double& s);
+
+    AD<double> cost(const AD<double>& a0, const AD<double>& a1, const AD<double>& a2, const AD<double>& a3,
+                    const AD<double>& s);
+
   private:
     sPosition m_iStartPosition;
     sPosition m_iGoalPosition;
@@ -71,8 +76,6 @@ class CFG_eval
                           const AD<double>& a1, const AD<double>& a2, const AD<double>& a3, const AD<double>& s);
     AD<double> position_y(const AD<double> position_y0, const AD<double> theta_0, const AD<double>& a0,
                           const AD<double>& a1, const AD<double>& a2, const AD<double>& a3, const AD<double>& s);
-    AD<double> cost(const AD<double>& a0, const AD<double>& a1, const AD<double>& a2, const AD<double>& a3,
-                    const AD<double>& s);
 };
 
 class CShort_Distance_Planner

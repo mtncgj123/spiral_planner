@@ -13,6 +13,11 @@ class Plot:
         self.block_height = 1.1
         self.block_angle = 0
 
+        self.block_min_x = self.block_x-self.block_width/2
+        self.block_max_x = self.block_x+self.block_width/2
+        self.block_min_y = self.block_y-self.block_height/2
+        self.block_max_y = self.block_y+self.block_height/2
+
     def block_plot(self):
         fig, ax = plt.subplots()
         plt.axis("equal")
@@ -228,12 +233,13 @@ class Plot:
             forklift_x, forklift_y, forklift_yaw, -1)
         return self.rectangles_intersect(np.array([[spin_x[0], spin_y[0]], [spin_x[1], spin_y[1]], [spin_x[2], spin_y[2]], [spin_x[3], spin_y[3]]]), rect)
 
-    def traj_collision_check(self, traj_x, traj_y, traj_yaw, line_point1, line_point2, valid_point):
+    def traj_collision_check(self, traj_x, traj_y, traj_yaw):
         for i in range(len(traj_x)):
-            if self.collision_check(traj_x[i], traj_y[i], traj_yaw[i], line_point1, line_point2, valid_point) == False:
-                return False
+            if self.collision_check_rect_forklift(traj_x[i], traj_y[i], traj_yaw[i], np.array([
+                    [self.block_min_x, self.block_min_y], [self.block_min_x, self.block_max_y], [self.block_max_x, self.block_max_y], [self.block_max_x, self.block_min_y]])) == True:
+                return True
 
-        return True
+        return False
 
     def closePlots(self):
         plt.clf()
@@ -241,23 +247,23 @@ class Plot:
         plt.close("all")
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    pt = Plot()
-    pt.block_plot()
+#     pt = Plot()
+#     pt.block_plot()
 
-    x_init = 12.5
-    y_init = 4.90
-    yaw_init = 170*pi/180
-    pt.forklift_draw(x_init, y_init, yaw_init, 1)
+#     x_init = 13.0
+#     y_init = 4.95
+#     yaw_init = -170*pi/180
+#     pt.forklift_draw(x_init, y_init, yaw_init, 1)
 
-    pt.margin_plot([7.59, 2.9], [19.07, 2.9])
-    pt.margin_plot([7.59, 2.9], [7.59, 8.5])
-    pt.margin_plot([7.59, 8.5], [19.07, 8.5])
-    pt.margin_plot([19.07, 8.5], [19.07, 2.9])
+#     pt.margin_plot([7.59, 2.9], [19.07, 2.9])
+#     pt.margin_plot([7.59, 2.9], [7.59, 8.5])
+#     pt.margin_plot([7.59, 8.5], [19.07, 8.5])
+#     pt.margin_plot([19.07, 8.5], [19.07, 2.9])
 
-    res = pt.collision_check_rect_forklift(x_init, y_init, yaw_init, np.array([
-        [11.5, 2.9], [13.5, 2.9], [13.5, 4], [11.5, 4]]))
-    print(res)
+#     res = pt.collision_check_rect_forklift(x_init, y_init, yaw_init, np.array([
+#         [pt.block_min_x, pt.block_min_y], [pt.block_min_x, pt.block_max_y], [pt.block_max_x, pt.block_max_y], [pt.block_max_x, pt.block_min_y]]))
+#     print(res)
 
-    plt.show()
+#     plt.show()

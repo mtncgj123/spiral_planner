@@ -143,7 +143,9 @@ include
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(spiral_planner src/spiral_path.cpp)
+
+add_executable(spiral_planner src/spiral_path_node.cpp src/spiral_path.cpp)
+add_executable(auto_charge src/auto_charge_node.cpp src/Auto_charge.cpp src/spiral_path.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -155,9 +157,14 @@ add_executable(spiral_planner src/spiral_path.cpp)
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(spiral_planner ${PROJECT_NAME}_gencpp)
+add_dependencies(auto_charge ${PROJECT_NAME}_gencpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(spiral_planner
+  ${catkin_LIBRARIES}
+  ipopt
+)
+target_link_libraries(auto_charge
   ${catkin_LIBRARIES}
   ipopt
 )

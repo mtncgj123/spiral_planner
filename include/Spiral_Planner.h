@@ -1,7 +1,7 @@
 #ifndef _SPIRAL_PLANNER_H
-#    define _SPIRAL_PALNNER_H
+#define _SPIRAL_PLANNER_H
 
-#    include <cppad/ipopt/solve.hpp>
+#include <cppad/ipopt/solve.hpp>
 
 using CppAD::AD;
 using namespace std;

@@ -5,8 +5,8 @@
 
     <param name="S_cost_coef" value="2.0" />
     <param name="Goal_cost_tolerence" value="0.1" />
-    <param name="planner" value="triple_path" type="string" />
-    <param name="cost" value="origin_with_s" type="string" />
+    <param name="planner" value="dual_path" type="string" />
+    <param name="cost" value="origin" type="string" />
 
 
   </node>

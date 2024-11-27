@@ -84,7 +84,7 @@ class CShort_Distance_Planner
     ~CShort_Distance_Planner();
     CFG_eval* m_ptrFG_eval;
 
-  private:
+  protected:
     // ROS related
     ros::NodeHandle m_nh;
     ros::ServiceServer m_servSpiralPlanner;
@@ -108,11 +108,11 @@ class CShort_Distance_Planner
                                              const std::vector<double>& vX_set, const double dInitial);
     void spiral_path_finder(sPosition iStartPosition, sPosition iGoalPosition, std::vector<double>& vSpiral_path_x,
                             std::vector<double>& vSpiral_path_y, std::vector<double>& vSpiral_path_yaw,
-                            std::vector<double>& vSpiral_path_curv, double& dMin_curvr, bool& bSFlag, double& dS);
+                            std::vector<double>& vSpiral_path_curv, double& dMin_curvr, bool& bSFlag, double& dS,
+                            double& dCost);
 
-    bool spiral_plan_srv_callback(spiral_planner::spiral::Request& request, spiral_planner::spiral::Response& response);
-    bool line_plan_srv_callback(spiral_planner::line::Request& request, spiral_planner::line::Response& response);
-    bool circle_plan_srv_callback(spiral_planner::circle::Request& request, spiral_planner::circle::Response& response);
+    virtual bool spiral_plan_srv_callback(spiral_planner::spiral::Request& request,
+                                          spiral_planner::spiral::Response& response);
     void printSolStatus(const CppAD::ipopt::solve_result<Dvector>::status_type& enumStatusType);
     void setSolverOptions(std::string& strOptions);
     void CalcDiscretePath(const sPosition& iStartPosition, const double dS, const std::vector<AD<double>>& res_a,
@@ -132,7 +132,7 @@ class CShort_Distance_Planner
     void CalcPath(std::vector<double>& vSpiral_path_x, std::vector<double>& vSpiral_path_y,
                   std::vector<double>& vSpiral_path_yaw, std::vector<double>& vSpiral_path_curv,
                   CppAD::ipopt::solve_result<Dvector> solution, const muint uSIndex, const sPosition& iStartPosition,
-                  const sPosition& iGoalPosition, double& dS, double& dMin_curvr);
+                  const sPosition& iGoalPosition, double& dS, double& dMin_curvr, double& dCost);
 };
 
 #endif

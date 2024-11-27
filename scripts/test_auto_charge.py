@@ -27,40 +27,11 @@ if __name__ == "__main__":
 
     start_position_list = []
     goal_position_list = []
-    start_position_list.append(Position(22.997613, 2.005575, 0*pi/180))  # 0
-    goal_position_list.append(Position(24.000000, 3.000000, -60*pi/180))
 
-    start_position_list.append(Position(22.997613, 2.005575, 0*pi/180))  # 1
-    goal_position_list.append(Position(24.000000, 3.000000, 0*pi/180))
-
-    start_position_list.append(Position(22.997613, 2.005575, 0*pi/180))  # 2
-    goal_position_list.append(Position(24.000000, 3.000000, -90*pi/180))
-
-    start_position_list.append(Position(22.997613, 2.005575, 170*pi/180))  # 3
-    goal_position_list.append(Position(24.000000, 3.000000, 120*pi/180))
-
-    start_position_list.append(Position(22.997613, 2.005575, 30*pi/180))  # 4
-    goal_position_list.append(Position(24.000000, 3.000000, 30*pi/180))
-
-    start_position_list.append(Position(22.997613, 2.005575, 170*pi/180))  # 5
-    goal_position_list.append(Position(24.000000, 3.000000, 90*pi/180))
-
-    start_position_list.append(Position(22.997613, 2.005575, 90*pi/180))  # 6
-    goal_position_list.append(Position(24.000000, 3.000000, 0*pi/180))
-
-    start_position_list.append(Position(22.997613, 2.005575, 90*pi/180))  # 7
-    goal_position_list.append(Position(23.000000, 2.000000, 0*pi/180))
-
-    start_position_list.append(Position(22.997613, 2.005575, 170*pi/180))  # 8
-    goal_position_list.append(Position(25.000000, 3.000000, 0*pi/180))
-
-    start_position_list.append(Position(22.997613, 2.005575, 30*pi/180))  # 9
-    goal_position_list.append(Position(25.000000, 3.000000, 0*pi/180))
-
-    start_position_list.append(Position(13.20, 4.75, 175*pi/180))  # 10
+    start_position_list.append(Position(13.20, 4.75, -170*pi/180))  # 0
     goal_position_list.append(Position(10, 4.85, 180*pi/180))
 
-    test_index = 10
+    test_index = 0
     start_position = [start_position_list[test_index].x,
                       start_position_list[test_index].y, start_position_list[test_index].yaw]
     goal_position = [goal_position_list[test_index].x,

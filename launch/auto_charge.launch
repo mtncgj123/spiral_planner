@@ -1,0 +1,11 @@
+<launch>
+
+    <param name="spiral_planner/S_cost_coef" value="2.0" />
+    <param name="spiral_planner/Goal_cost_tolerence" value="0.1" />
+    <param name="spiral_planner/planner" value="auto_charge_single" type="string" />
+    <param name="spiral_planner/cost" value="origin_with_s" type="string" />
+
+  <node pkg="spiral_planner" name="auto_charge" type="auto_charge" output="screen">
+  </node>
+
+</launch>

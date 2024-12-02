@@ -36,7 +36,7 @@ bool CAuto_Charge_Planner::spiral_plan_srv_callback(spiral_planner::spiral::Requ
     ros::Time Current = ros::Time::now();
     spiral_path_finder(iStartPosition, iGoalPosition_1, vSpiral_path_x_1, vSpiral_path_y_1, vSpiral_path_yaw_1,
                        vSpiral_path_curv_1, dMin_curvr_1, bSFlag_1, dS_1, dCost_1);
-    double dMin_Y_1 = *min_element(vSpiral_path_y_1.begin(), vSpiral_path_y_1.end());
+    double dMin_Y_1 = find_min_y(vSpiral_path_x_1, vSpiral_path_y_1, vSpiral_path_yaw_1);
 
     m_ptrFG_eval->reset();
     m_ptrFG_eval->setStartPosition(iStartPosition);
@@ -46,12 +46,12 @@ bool CAuto_Charge_Planner::spiral_plan_srv_callback(spiral_planner::spiral::Requ
     bool bSFlag_2;
     spiral_path_finder(iStartPosition, iGoalPosition_2, vSpiral_path_x_2, vSpiral_path_y_2, vSpiral_path_yaw_2,
                        vSpiral_path_curv_2, dMin_curvr_2, bSFlag_2, dS_2, dCost_2);
-    double dMin_Y_2 = *min_element(vSpiral_path_y_2.begin(), vSpiral_path_y_2.end());
+    double dMin_Y_2 = find_min_y(vSpiral_path_x_2, vSpiral_path_y_2, vSpiral_path_yaw_2);
 
     std::vector<double> vSpiral_path_x, vSpiral_path_y, vSpiral_path_yaw, vSpiral_path_curv;
     double dMin_curvr, dS;
     bool bSFlag;
-    if (fabs(dMin_Y_1 - dMin_Y_2) >= 0.05)
+    if (fabs(dMin_Y_1 - dMin_Y_2) >= 0.03)
     {
         if (dMin_Y_1 > dMin_Y_2)
         {
@@ -116,4 +116,27 @@ bool CAuto_Charge_Planner::spiral_plan_srv_callback(spiral_planner::spiral::Requ
     response.s_flag = bSFlag;
 
     return true;
+}
+
+double CAuto_Charge_Planner::find_min_y(const std::vector<double>& vSpiral_path_x,
+                                        const std::vector<double>& vSpiral_path_y,
+                                        const std::vector<double>& vSpiral_path_yaw)
+{
+    double dMinY = 1e7;
+    for (muint i = 0; i < vSpiral_path_x.size(); ++i)
+    {
+        double dForkliftX = vSpiral_path_x[i];
+        double dForkliftY = vSpiral_path_y[i];
+        double dForkliftYaw = vSpiral_path_yaw[i];
+        Eigen::Matrix3d matRotation;
+        matRotation << cos(dForkliftYaw), -sin(dForkliftYaw), dForkliftX, sin(dForkliftYaw), cos(dForkliftYaw),
+            dForkliftY, 0, 0, 1;
+        Eigen::MatrixXd matPosition_offset(3, 4);
+        matPosition_offset << m_dForklift_x_front, m_dForklift_x_front, m_dForklift_x_back, m_dForklift_x_back,
+            m_dForklift_y_left, m_dForklift_y_right, m_dForklift_y_left, m_dForklift_y_right, 1, 1, 1, 1;
+        Eigen::MatrixXd matGlobalPos = matRotation * matPosition_offset;
+        double dCurrent_min_y = matGlobalPos.row(1).minCoeff();
+        dMinY = dCurrent_min_y < dMinY ? dCurrent_min_y : dMinY;
+    }
+    return dMinY;
 }

@@ -7,6 +7,14 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 find_package(ompl REQUIRED)
 
+find_package(Eigen3 REQUIRED)
+set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+
+include_directories(include
+  	${catkin_INCLUDE_DIRS}
+  	${Eigen3_INCLUDE_DIRS} 
+)
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 

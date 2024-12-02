@@ -30,8 +30,8 @@ class Plot:
         plt.plot()
 
     def forklift_draw(self, x, y, yaw, draw_flag):
-        fork_anglepoint = [[0.75, 0.39], [
-            0.75, -2], [-0.75, -2], [-0.75, 0.39]]
+        fork_anglepoint = [[0.8, 0.56], [
+            0.8, -2.48], [-0.8, -2.48], [-0.8, 0.56]]
         spin_x = []
         spin_y = []
         rotation_angle = yaw-pi/2
@@ -253,8 +253,8 @@ class Plot:
 #     pt.block_plot()
 
 #     x_init = 13.0
-#     y_init = 4.95
-#     yaw_init = -170*pi/180
+#     y_init = 4.9
+#     yaw_init = 180*pi/180
 #     pt.forklift_draw(x_init, y_init, yaw_init, 1)
 
 #     pt.margin_plot([7.59, 2.9], [19.07, 2.9])

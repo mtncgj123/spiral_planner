@@ -24,12 +24,7 @@ struct sPosition
 
     sPosition() {}
 
-    sPosition(double dX, double dY, double dYaw)
-    {
-        m_dX = dX;
-        m_dY = dY;
-        m_dYaw = dYaw;
-    }
+    sPosition(double dX, double dY, double dYaw) : m_dX(dX), m_dY(dY), m_dYaw(dYaw) {}
 };
 
 class CFG_eval
@@ -37,10 +32,11 @@ class CFG_eval
   public:
     typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
     CFG_eval(){};
-    CFG_eval(sPosition iStartPosition, sPosition iGoalPosition);
+    CFG_eval(sPosition iStartPosition, sPosition iGoalPosition) :
+        m_iStartPosition(iStartPosition), m_iGoalPosition(iGoalPosition){};
     std::vector<AD<double>> mapping_k2a(const AD<double>& k0, const AD<double>& k1, const AD<double>& k2,
                                         const AD<double>& k3, const AD<double>& s);
-    AD<double> theta(const AD<double> theta_0, const AD<double>& a0, const AD<double>& a1, const AD<double>& a2,
+    AD<double> theta(const AD<double>& theta_0, const AD<double>& a0, const AD<double>& a1, const AD<double>& a2,
                      const AD<double>& a3, const AD<double>& s);
     AD<double> curv(const AD<double>& a0, const AD<double>& a1, const AD<double>& a2, const AD<double>& a3,
                     const AD<double>& s);
@@ -68,9 +64,9 @@ class CFG_eval
     double m_dMin_curv_r = 2.5;
     double m_dMax_curv = 1 / m_dMin_curv_r;
 
-    AD<double> position_x(const AD<double> position_x0, const AD<double> theta_0, const AD<double>& a0,
+    AD<double> position_x(const AD<double>& position_x0, const AD<double>& theta_0, const AD<double>& a0,
                           const AD<double>& a1, const AD<double>& a2, const AD<double>& a3, const AD<double>& s);
-    AD<double> position_y(const AD<double> position_y0, const AD<double> theta_0, const AD<double>& a0,
+    AD<double> position_y(const AD<double>& position_y0, const AD<double>& theta_0, const AD<double>& a0,
                           const AD<double>& a1, const AD<double>& a2, const AD<double>& a3, const AD<double>& s);
     AD<double> cost(const AD<double>& a0, const AD<double>& a1, const AD<double>& a2, const AD<double>& a3,
                     const AD<double>& s);

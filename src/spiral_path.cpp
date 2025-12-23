@@ -4,25 +4,22 @@ using CppAD::AD;
 
 // CFG_eval function definition
 
-CFG_eval::CFG_eval(sPosition iStartPosition, sPosition iGoalPosition)
-{
-    m_iStartPosition = iStartPosition;
-    m_iGoalPosition = iGoalPosition;
-}
-
+// 计算曲率
 AD<double> CFG_eval::curv(const AD<double>& a0, const AD<double>& a1, const AD<double>& a2, const AD<double>& a3,
                           const AD<double>& s)
 {
     return a3 * pow(s, 3) + a2 * pow(s, 2) + a1 * s + a0;
 }
 
-AD<double> CFG_eval::theta(const AD<double> theta_0, const AD<double>& a0, const AD<double>& a1, const AD<double>& a2,
+// 计算角度
+AD<double> CFG_eval::theta(const AD<double>& theta_0, const AD<double>& a0, const AD<double>& a1, const AD<double>& a2,
                            const AD<double>& a3, const AD<double>& s)
 {
     return theta_0 + a3 * pow(s, 4) / 4.0 + a2 * pow(s, 3) / 3.0 + a1 * pow(s, 2) / 2.0 + a0 * s;
 }
 
-AD<double> CFG_eval::position_x(const AD<double> position_x0, const AD<double> theta_0, const AD<double>& a0,
+// 积分计算X坐标
+AD<double> CFG_eval::position_x(const AD<double>& position_x0, const AD<double>& theta_0, const AD<double>& a0,
                                 const AD<double>& a1, const AD<double>& a2, const AD<double>& a3, const AD<double>& s)
 {
     return position_x0 +
@@ -37,7 +34,8 @@ AD<double> CFG_eval::position_x(const AD<double> position_x0, const AD<double> t
                 cos(theta(theta_0, a0, a1, a2, a3, s * 8 / 8.0)));
 }
 
-AD<double> CFG_eval::position_y(const AD<double> position_y0, const AD<double> theta_0, const AD<double>& a0,
+// 积分计算Y坐标
+AD<double> CFG_eval::position_y(const AD<double>& position_y0, const AD<double>& theta_0, const AD<double>& a0,
                                 const AD<double>& a1, const AD<double>& a2, const AD<double>& a3, const AD<double>& s)
 {
     return position_y0 +
@@ -66,6 +64,7 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
     double dSoft_constraints_coef = 1000.0;
     double dS_cost_coef = 0.01;
 
+    // 曲率和曲率变化率
     if ("origin" == m_strCost)
     {
         return (pow(a3, 2) / 7.0 * pow(s, 7) + 2 / 6.0 * a3 * a2 * pow(s, 6) +
@@ -75,6 +74,7 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
                 (2 * a1 * a0 + 4 * a1 * a2) / 2.0 * pow(s, 2) + (pow(a0, 2) + pow(a1, 2)) * s) *
                s / fabs(s);
     }
+    // 曲率和曲率变化率+终点软约束
     else if ("soft" == m_strCost)
     {
         return (pow(a3, 2) / 7.0 * pow(s, 7) + 2 / 6.0 * a3 * a2 * pow(s, 6) +
@@ -87,6 +87,7 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
                dSoft_constraints_coef * pow(position_y(dY_init, dYaw_init, a0, a1, a2, a3, s) - dY_goal, 2) +
                dSoft_constraints_coef * pow(theta(dYaw_init, a0, a1, a2, a3, s) - dYaw_goal, 2);
     }
+    // 曲率和曲率变化率+距离代价
     else if ("origin_with_s" == m_strCost)
     {
         return (pow(a3, 2) / 7.0 * pow(s, 7) + 2 / 6.0 * a3 * a2 * pow(s, 6) +
@@ -104,6 +105,7 @@ AD<double> CFG_eval::cost(const AD<double>& a0, const AD<double>& a1, const AD<d
     }
 }
 
+// 参数重映射，将三等分点的曲率映射到多项式系数
 std::vector<AD<double>> CFG_eval::mapping_k2a(const AD<double>& k0, const AD<double>& k1, const AD<double>& k2,
                                               const AD<double>& k3, const AD<double>& s)
 {
@@ -129,14 +131,13 @@ void CFG_eval::checkCurv(const std::vector<AD<double>>& res_a, const double& dMa
     {
         double dSol_s = -dParam_a2 / dParam_a3 / 3.0;
         double dCurv = CppAD::Value(curv(res_a[0], res_a[1], res_a[2], res_a[3], dSol_s));
-        if (-dMaxCurv <= dCurv && dCurv <= dMaxCurv)
+
+        if (dCurv < -dMaxCurv || dCurv > dMaxCurv)
         {
-            return;
-        }
-        else if (0 <= dSol_s / dS && dSol_s / dS <= 1)
-        {
-            vInvalidS.push_back(dSol_s);
-            return;
+            if (0 <= dSol_s / dS && dSol_s / dS <= 1)
+            {
+                vInvalidS.push_back(dSol_s);
+            }
         }
     }
     else
@@ -157,10 +158,8 @@ void CFG_eval::checkCurv(const std::vector<AD<double>>& res_a, const double& dMa
             if (0 <= dSol_s2 / dS && dSol_s2 / dS <= 1)
             {
                 vInvalidS.push_back(dSol_s2);
-                return;
             }
         }
-        return;
     }
 }
 
@@ -182,12 +181,14 @@ void CFG_eval::operator()(ADvector& fg, const ADvector& p)
         fg[0] = cost(polyparam_set[0], polyparam_set[1], polyparam_set[2], polyparam_set[3], polyparam_set[4]);
 
         // constraints
+        // 三等分点的曲率约束和路径长度约束
         fg[1] = k0;
         fg[2] = k1;
         fg[3] = k2;
         fg[4] = k3;
         fg[5] = s;
 
+        // 目标点达到约束
         fg[6] = position_x(m_iStartPosition.m_dX, m_iStartPosition.m_dYaw, polyparam_set[0], polyparam_set[1],
                            polyparam_set[2], polyparam_set[3], polyparam_set[4]) -
                 m_iGoalPosition.m_dX;
@@ -239,6 +240,7 @@ void CFG_eval::operator()(ADvector& fg, const ADvector& p)
 
         return;
     }
+    // 到点约束设置为软约束
     else if ("soft" == m_strPlanner)
     {
         assert(p.size() == 5);
@@ -641,8 +643,11 @@ CShort_Distance_Planner::CShort_Distance_Planner()
 }
 CShort_Distance_Planner::~CShort_Distance_Planner()
 {
-    delete m_ptrFG_eval;
-    m_ptrFG_eval = nullptr;
+    if (nullptr != m_ptrFG_eval)
+    {
+        delete m_ptrFG_eval;
+        m_ptrFG_eval = nullptr;
+    }
 }
 
 // spiral path plan
@@ -703,7 +708,7 @@ void CShort_Distance_Planner::spiral_path_finder(sPosition iStartPosition, sPosi
         gu[1] = m_dMax_curv;
         gl[2] = -m_dMax_curv;  // k2
         gu[2] = m_dMax_curv;
-        gl[3] = m_dMax_curv;  // k3
+        gl[3] = -m_dMax_curv;  // k3
         gu[3] = m_dMax_curv;
         gl[4] = -10;  // s
         gu[4] = 10;
